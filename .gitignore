@@ -1,0 +1,6 @@
+.vagrant/
+*.log
+*.tmp
+*.tgz
+.vscode/
+.idea/
