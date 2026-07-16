@@ -1,0 +1,27 @@
+---
+# Создает папку с приложением
+- name: Create application directory
+  file:
+    path: /opt/app
+    state: directory
+    mode: '0755'
+# Копирование файла docker-compose.yml из корня проекта
+- name: Copy docker-compose.yml
+  copy:
+    src: ./docker-compose.yml
+    dest: /opt/app/docker-compose.yml
+    mode: '0644'
+# Копирование файла init.sql из файла services/database из корня проекта
+- name: Copy init.sql for databases
+  copy:
+    src: ./services/database/init.sql
+    dest: /opt/app/init.sql
+    mode: '0644'
+# Запуск микросервисного приложения
+- name: Launch microservices application
+  community.docker.docker_compose_v2:
+    project_src: /opt/app
+    state: present
+    pull: "always"
+    wait: yes
+    wait_timeout: 120

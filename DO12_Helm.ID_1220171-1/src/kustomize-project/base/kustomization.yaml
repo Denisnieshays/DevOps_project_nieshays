@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - booking.yaml
+  - gateway.yaml
+  - hotel.yaml
+  - session.yaml
+  - payment.yaml
+  - loyalty.yaml
+  - report.yaml
+  - postgres.yaml
+  - rabbitmq.yaml

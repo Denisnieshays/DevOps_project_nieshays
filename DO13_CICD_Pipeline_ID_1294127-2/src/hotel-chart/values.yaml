@@ -1,0 +1,135 @@
+services:
+  - name: gateway
+    image: nieshays/gateway-service:do9
+    port: 8087
+    replicas: 3
+    env:
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,prometheus,mappings"
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+      SESSION_SERVICE_HOST: "session-service"
+      SESSION_SERVICE_PORT: "8081"
+      BOOKING_SERVICE_HOST: "booking-service"
+      BOOKING_SERVICE_PORT: "8083"
+      HOTEL_SERVICE_HOST: "hotel-service"
+      HOTEL_SERVICE_PORT: "8082"
+      PAYMENT_SERVICE_HOST: "payment-service"
+      PAYMENT_SERVICE_PORT: "8084"
+      LOYALTY_SERVICE_HOST: "loyalty-service"
+      LOYALTY_SERVICE_PORT: "8085"
+      REPORT_SERVICE_HOST: "report-service"
+      REPORT_SERVICE_PORT: "8086"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      GATEWAY_UUID: "b51ceda2-bfa5-11eb-8529-0242ac130003"
+
+  - name: session
+    image: nieshays/session-service:do9
+    port: 8081
+    replicas: 1
+    env:
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+  - name: booking
+    image: nieshays/booking-service:do10
+    port: 8083
+    replicas: 1
+    env:
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+      RABBIT_MQ_QUEUE_NAME: "booking_queue"
+      RABBIT_MQ_EXCHANGE: "booking_exchange"
+      RABBIT_MQ_USER: "guest"
+      RABBIT_MQ_PASSWORD: "guest"
+      HOTEL_SERVICE_HOST: "hotel-service"
+      HOTEL_SERVICE_PORT: "8082"
+      PAYMENT_SERVICE_HOST: "payment-service"
+      PAYMENT_SERVICE_PORT: "8084"
+      LOYALTY_SERVICE_HOST: "loyalty-service"
+      LOYALTY_SERVICE_PORT: "8085"
+      SPRING_RABBITMQ_HOST: "rabbitmq-service"
+      SPRING_RABBITMQ_PORT: "5672"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      BOOKING_UUID: "911ccb4c-c055-11eb-8529-0242ac130003"
+
+  - name: hotel
+    image: nieshays/hotel-service:latest
+    port: 8082
+    replicas: 1
+    env:
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+  - name: payment
+    image: nieshays/payment-service:latest
+    port: 8084
+    replicas: 1
+    env:
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+  - name: loyalty
+    image: nieshays/loyalty-service:latest
+    port: 8085
+    replicas: 1
+    env:
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+  - name: report
+    image: nieshays/report-service:do9
+    port: 8086
+    replicas: 1
+    env:
+      POSTGRES_HOST: "postgres-service"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "hotels_db"
+      RABBIT_MQ_QUEUE_NAME: "report_queue"
+      RABBIT_MQ_EXCHANGE: "report_exchange"
+      RABBIT_MQ_USER: "guest"
+      RABBIT_MQ_PASSWORD: "guest"
+      SPRING_RABBITMQ_HOST: "rabbitmq-service"
+      SPRING_RABBITMQ_PORT: "5672"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+  - name: postgres
+    image: postgres:13
+    port: 5432
+    replicas: 1
+    storage: 1Gi
+    env:
+      POSTGRES_DB: "hotels_db"
+    secrets:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+
+  - name: rabbitmq
+    image: rabbitmq:3-management-alpine
+    port: 5672
+    replicas: 1
+    env: {}
+    secrets: {}

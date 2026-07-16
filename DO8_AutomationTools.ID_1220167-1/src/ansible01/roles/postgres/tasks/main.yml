@@ -1,0 +1,39 @@
+---
+# 1. Установить PostgreSQL
+- name: Install PostgreSQL
+  apt:
+    name: postgresql
+    state: present
+
+# 2. Запустить PostgreSQL  
+- name: Start PostgreSQL service
+  service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+# 3. Создать базу данных 
+- name: Create test database
+  shell: sudo -u postgres createdb testdb 2>/dev/null || true
+  args:
+    executable: /bin/bash
+
+# 4. Создать таблицу с тремя записями (произвольными)
+- name: Create table with exactly 3 records
+  shell: |
+    sudo -u postgres psql -d "{{ postgres_database }}" <<'EOF'
+    CREATE TABLE IF NOT EXISTS {{ postgres_table }} (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100),
+      email VARCHAR(100)
+    );
+    
+    TRUNCATE TABLE {{ postgres_table }} RESTART IDENTITY;
+    
+    INSERT INTO {{ postgres_table }} (name, email) VALUES
+      ('Alice Johnson', 'alice@example.com'),
+      ('Will Smith', 'will@example.com'),
+      ('Charlie Brown', 'charlie@example.com');
+    EOF
+  args:
+    executable: /bin/bash

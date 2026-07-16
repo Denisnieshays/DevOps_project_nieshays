@@ -1,0 +1,22 @@
+---
+- name: Установка PostgreSQL
+  apt:
+    name: postgresql
+    state: present
+    update_cache: yes
+
+- name: Запуск PostgreSQL
+  systemd:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Создание базы данных hotels_db
+  become: yes
+  shell: |
+    createdb hotels_db 2>/dev/null || echo "База уже существует"
+  args:
+    chdir: /tmp
+  register: db_creation
+  changed_when: "'уже существует' not in db_creation.stdout"
+  failed_when: false

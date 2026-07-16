@@ -1,0 +1,34 @@
+{{- range .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}-deployment
+  labels:
+    app: {{ .name }}
+spec:
+  replicas: {{ .replicas }}
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      enableServiceLinks: false
+      containers:
+      - name: {{ .name }}
+        image: {{ .image }}
+        ports:
+        - containerPort: {{ .port }}
+        env:
+        {{- range $key, $value := .env }}
+        - name: {{ $key }}
+          value: "{{ $value }}"
+        {{- end }}
+        {{- range $key, $value := .secrets }}
+        - name: {{ $key }}
+          value: "{{ $value }}"
+        {{- end }}
+{{- end }}

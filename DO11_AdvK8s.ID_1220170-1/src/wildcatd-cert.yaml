@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-cert
+  namespace: defaul
+spec:
+  secretName: wildcard-tls
+  commonName: "*.myapp-nieshays.local"
+  dnsNames:
+  - "*.myapp-nieshays.local"
+  issuerRef:
+    name: my-rootca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

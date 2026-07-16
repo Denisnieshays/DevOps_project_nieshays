@@ -1,0 +1,34 @@
+---
+- name: Установка Docker и необходимых компонентов
+  apt:
+    name:
+      - docker.io
+      - docker-compose-v2
+      - python3-pip
+    state: present
+    update_cache: yes
+
+- name: Запуск и включение Docker демона
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Установка Python-пакета docker (для модуля Ansible)
+  pip:
+    name: docker
+    state: present
+
+- name: Запуск контейнера Consul в режиме сервера
+  docker_container:
+    name: consul-server
+    image: "hashicorp/consul:{{ consul_version }}"
+    state: started
+    restart_policy: always
+    command: "agent -server -bootstrap-expect=1 -client=0.0.0.0 -ui -bind=0.0.0.0 -advertise={{ advertise_addr }}"
+    network_mode: host
+    env:
+      CONSUL_BIND_INTERFACE: "enp0s8"
+    volumes:
+      - "/opt/consul/data:/consul/data"
+      - "/etc/consul.d:/consul/config"

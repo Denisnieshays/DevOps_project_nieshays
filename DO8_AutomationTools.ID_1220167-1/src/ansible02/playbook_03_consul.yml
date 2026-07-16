@@ -1,0 +1,32 @@
+---
+- name: Настройка инфраструктуры микросервисов
+  hosts: all
+  tasks:
+    - name: Обновление apt-кеша
+      become: yes
+      apt:
+        update_cache: yes
+
+- name: Установка Consul сервера
+  hosts: consul_servers
+  become: yes
+  roles:
+    - install_consul_server
+
+- name: Установка Consul клиентов
+  hosts: consul_clients
+  become: yes
+  roles:
+    - install_consul_client
+
+- name: Установка базы данных
+  hosts: database
+  become: yes
+  roles:
+    - install_db
+
+- name: Установка сервиса отелей
+  hosts: hotels_service
+  become: yes
+  roles:
+    - install_hotels_service

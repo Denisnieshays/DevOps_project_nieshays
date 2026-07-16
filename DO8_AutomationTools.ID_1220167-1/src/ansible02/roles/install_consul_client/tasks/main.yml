@@ -1,0 +1,48 @@
+---
+# 1. Установка Docker и Python (одной задачей)
+- name: Установить Docker и зависимости
+  apt:
+    name:
+      - docker.io
+      - python3-pip
+    state: present
+    update_cache: yes
+# 2. устанавливает Python-библиотеку docker, которая необходима Ansible для управления Docker через модули
+- name: Установить Docker SDK для Python
+  pip:
+    name: docker
+    state: present
+  become: yes
+
+# 3. Включение Docker
+- name: Запустить Docker
+  systemd:
+    name: docker
+    state: started
+    enabled: yes
+# 4. Запускает Envoy на клиенте (вм)
+- name: Запустить Envoy в Docker-контейнере (Pull latest)
+  docker_container:
+    name: envoy
+    image: envoyproxy/envoy:v1.32-latest
+    state: started
+    restart_policy: always
+    network_mode: host
+    pull: yes
+
+# 5. Запуск Consul клиента в Docker
+- name: Запустить Consul клиент
+  docker_container:
+    name: consul-client
+    image: "hashicorp/consul:{{ consul_version }}"
+    state: started
+    restart_policy: always
+    command: >
+      agent 
+      -config-dir=/consul/config 
+      -retry-join={{ consul_server_ip }}
+      -bind=0.0.0.0 
+      -advertise={{ advertise_addr }}
+    network_mode: host
+    volumes:
+      - "/etc/consul.d:/consul/config"

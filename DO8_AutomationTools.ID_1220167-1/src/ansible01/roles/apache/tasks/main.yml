@@ -1,0 +1,20 @@
+---
+# Установка веб-сервера Apache
+- name: Install Apache web server
+  apt:
+    name: apache2
+    state: present
+    update_cache: yes
+# Развертывание пользовательской страницы
+- name: Deploy custom index page
+  template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    mode: '0644'
+  notify: restart apache
+# Проверяем, что Apache запущен и включен
+- name: Ensure Apache is running and enabled
+  service:
+    name: apache2
+    state: started
+    enabled: yes

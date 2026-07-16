@@ -1,0 +1,30 @@
+---
+- name: Установка openjdk-8-jdk
+  apt:
+    name: openjdk-8-jdk
+    state: present
+
+- name: Копирование исходного кода сервиса
+  copy:
+    src: "./hotel-service/target/hotel-service-0.0.1-SNAPSHOT.jar"
+    dest: /opt/hotel-service.jar
+    mode: "0755"
+
+- name: Создание переменных окружения
+  lineinfile:
+    path: /etc/environment
+    line: "{{ item }}"
+    state: present
+  loop:
+    - 'POSTGRES_HOST="127.0.0.1"'
+    - 'POSTGRES_PORT="5432"'
+    - 'POSTGRES_DB="hotels_db"'
+    - 'POSTGRES_USER="hotel_user"'
+    - 'POSTGRES_PASSWORD="hotel_password"'
+
+- name: Запуск jar-файла
+  shell: |
+    nohup java -jar /opt/hotel-service.jar > /var/log/hotel-service.log 2>&1 &
+    sleep 5
+  args:
+    creates: /var/run/hotel-service.pid

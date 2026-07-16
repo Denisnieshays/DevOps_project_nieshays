@@ -1,0 +1,26 @@
+auth_enabled: false
+# Loki будет принимать запросы на порту 3100
+server:
+  http_listen_port: 3100
+# Общие настройки и хранение в файловой системе
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1 
+    kvstore:
+      store: inmemory
+# Схема хранения данных и создает индексы для упрощенного поиска логов
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h

@@ -1,0 +1,64 @@
+global:
+  # Базовые настройки
+  resolve_timeout: 5m
+  smtp_smarthost: 'smtp.yandex.ru:587'
+  smtp_from: 'lo************@yandex.ru'
+  smtp_auth_username: 'lo************@yandex.ru'
+  smtp_auth_password: 'ys*************g'
+  smtp_require_tls: true
+
+# Маршрутизация уведомлений
+route:
+  group_by: ['alertname', 'job']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'critical-receiver'
+  routes:
+    - match:
+        severity: 'critical'
+      receiver: 'critical-receiver'
+      continue: true
+    - match:
+        severity: 'warning'
+      receiver: 'default-receiver'
+      continue: true
+
+# Получатели уведомлений
+receivers:
+  - name: 'default-receiver' # просто уведомляет, что алерт произошел
+    email_configs:
+      - to: 'lo************@yandex.ru'
+        send_resolved: true
+        headers:
+          subject: '⚠️ {{ .GroupLabels.alertname }}'
+    telegram_configs:
+      - bot_token: 865***************************************RLE
+        chat_id: 20*******9
+        api_url: 'https://api.telegram.org'
+        send_resolved: true
+
+  - name: 'critical-receiver' # отправляет детальную информацию (описание, значение)
+    email_configs:
+      - to: 'lo************@yandex.ru'
+        send_resolved: true
+        headers:
+          subject: '🔴 CRITICAL: {{ .GroupLabels.alertname }}'
+    telegram_configs:
+      - bot_token: 865****************************************RLE
+        chat_id: 20*******9
+        api_url: 'https://api.telegram.org'
+        send_resolved: true
+        message: |
+          🔴 *{{ .GroupLabels.alertname }}*
+          Severity: {{ .CommonLabels.severity }}
+          Description: {{ .CommonAnnotations.description }}
+          Value: {{ .CommonAnnotations.value }}
+
+# Подавление алертов. Служит для того, чтобы не спамить одни и те же проблемы 
+inhibit_rules:
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'job']

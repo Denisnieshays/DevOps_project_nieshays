@@ -1,0 +1,17 @@
+gitlabUrl: "https://git.21-school.ru"
+runnerRegistrationToken: "GR1348941bmMyNLxxkTnDcoL7wRVK"
+
+rbac:
+  create: true
+serviceAccount:
+  create: true
+
+volumes:
+  - name: runner-config
+    secret:
+      secretName: gitlab-runner-config
+
+volumeMounts:
+  - name: runner-config
+    mountPath: /etc/gitlab-runner
+    readOnly: true

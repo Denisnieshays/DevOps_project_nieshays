@@ -1,0 +1,6 @@
+apiVersion: v2
+name: hotel-chart
+description: Helm chart for Hotel Booking Application
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

@@ -1,0 +1,22 @@
+#include <fcgi_stdio.h>
+#include <stdlib.h>
+
+int main(void) {
+    while (FCGI_Accept() >= 0) {
+        printf("Content-type: text/html\r\n");
+        printf("\r\n");
+        
+        printf("<!DOCTYPE html>\n");
+        printf("<html>\n");
+        printf("<head>\n");
+        printf("    <title>Docker Server</title>\n");
+        printf("</head>\n");
+        printf("<body>\n");
+        printf("    <h1>Hello from Docker Container!</h1>\n");
+        printf("    <p>FastCGI server running on port 8080</p>\n");
+        printf("    <p>Nginx proxying from port 80</p>\n");
+        printf("</body>\n");
+        printf("</html>\n");
+    }
+    return 0;
+}

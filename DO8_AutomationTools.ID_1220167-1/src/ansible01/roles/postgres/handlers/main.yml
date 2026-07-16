@@ -1,0 +1,6 @@
+---
+# В случае падения сервиса этот файл перезагружает Postgresql
+- name: restart postgresql
+  service:
+    name: postgresql
+    state: restarted

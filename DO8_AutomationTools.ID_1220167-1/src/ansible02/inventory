@@ -1,0 +1,30 @@
+# Consul сервер
+[consul_servers]
+consul_server ansible_host=192.168.56.10 ansible_user=vagrant advertise_addr=192.168.56.10 ansible_ssh_private_key_file=/vagrant/.vagrant/machines/consul_server/virtualbox/private_key
+
+# Consul клиенты (api и db)
+[consul_clients]
+api ansible_host=192.168.56.11 ansible_user=vagrant advertise_addr=192.168.56.11 consul_server_ip=192.168.56.10 ansible_ssh_private_key_file=/vagrant/.vagrant/machines/api/virtualbox/private_key
+db ansible_host=192.168.56.13 ansible_user=vagrant advertise_addr=192.168.56.13 consul_server_ip=192.168.56.10 ansible_ssh_private_key_file=/vagrant/.vagrant/machines/db/virtualbox/private_key
+
+# Машина manager (для управления)
+[managers]
+manager ansible_host=192.168.56.12 ansible_user=vagrant ansible_ssh_private_key_file=/vagrant/.vagrant/machines/manager/virtualbox/private_key
+
+# Группы по функциональности
+[database]
+db
+
+[hotels_service]
+api
+
+# Все хосты
+[all:children]
+consul_servers
+consul_clients
+managers
+
+# Общие переменные для всех хостов
+[all:vars]
+ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+ansible_python_interpreter=/usr/bin/python3

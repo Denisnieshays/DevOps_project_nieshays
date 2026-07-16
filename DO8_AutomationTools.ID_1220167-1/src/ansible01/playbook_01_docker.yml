@@ -1,0 +1,72 @@
+---
+# Установка докера и запуск микросервисного приложения
+- name: === Installing Docker and deploying a microservice application ===
+  hosts: 'node01'
+  become: yes
+  vars:
+    docker_compose_version: "v5.0.1"
+  tasks:
+    # Обновления пакета apt
+    - name: === Update the apt package index ===
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+    # Установка всех необходимых системных пакетов
+    - name: === Install required system packages ===
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - gnupg
+          - lsb-release
+        state:  present
+    # Добавление ключа GPG Docker
+    - name: === Added GPG-ключ Docker ===
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+    # Добавляется Докер репозиторий
+    - name: === Add repository Docker ===
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+    # Установка Docker Engine, CLI и контейнера (всех необходимых для работы инструментов)
+    - name: === Install Docker Engine, CLI и Containerd ===
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+        state: present
+        update_cache: yes
+    # Установка Docker Compose
+    - name: === Install Docker Compose ===
+      get_url:
+        url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-linux-x86_64"
+        dest: /usr/libexec/docker/cli-plugins/docker-compose
+        mode: '0755'
+      register: download_result
+    # Создание символических ссылок для Docker Compose
+    - name: === Create a symbolic link for Docker Compose ===
+      file:
+        src: /usr/libexec/docker/cli-plugins/docker-compose
+        dest: /usr/local/bin/docker-compose
+        state: link
+      when: download_result.changed
+    # Копирование файлов проекта на целевые хосты
+    - name: === Copy project files to target hosts ===
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: '0644'
+      loop:
+        - { src: './docker-compose.yml', dest: '/opt/app/docker-compose.yml' }
+        - { src: './services/database/init.sql', dest: '/opt/app/services/database/init.sql' }
+    # Запуск приложения c помощью Docker Compose
+    - name: === Launch the application using Docker Compose ===
+      community.docker.docker_compose_v2:
+        project_src: /opt/app
+        state: present

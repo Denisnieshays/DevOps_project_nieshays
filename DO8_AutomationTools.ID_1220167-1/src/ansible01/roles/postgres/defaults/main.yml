@@ -1,0 +1,7 @@
+---
+# Данные пользователя postgres для успешной идентификации в сервисе
+postgres_database: "testdb"
+postgres_table: "users"
+postgres_user: "testuser"
+postgres_password: "testpassword123"
+postgres_version: "14"

@@ -1,0 +1,99 @@
+stages:
+  - build
+  - test
+  - staging
+
+variables:
+  MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "password"
+  RABBIT_MQ_USER: "guest"
+  RABBIT_MQ_PASSWORD: "guest"
+  RABBIT_MQ_QUEUE_NAME: "booking_queue"
+  RABBIT_MQ_EXCHANGE: "booking_exchange"
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_PORT: "5672"
+  HOTEL_SERVICE_HOST: "hotel-service"
+  HOTEL_SERVICE_PORT: "8082"
+  PAYMENT_SERVICE_HOST: "payment-service"
+  PAYMENT_SERVICE_PORT: "8084"
+  LOYALTY_SERVICE_HOST: "loyalty-service"
+  LOYALTY_SERVICE_PORT: "8085"
+  SESSION_SERVICE_HOST: "session-service"
+  SESSION_SERVICE_PORT: "8081"
+  BOOKING_SERVICE_HOST: "booking-service"
+  BOOKING_SERVICE_PORT: "8083"
+  REPORT_SERVICE_HOST: "report-service"
+  REPORT_SERVICE_PORT: "8086"
+  GATEWAY_SERVICE_PORT: "8087"
+
+# ============================================
+# STAGE 1: BUILD
+# ============================================
+build:
+  stage: build
+  image: maven:3.8-openjdk-11
+  script:
+    - set -e
+    - cd src/services/booking-service && mvn clean package -DskipTests && cd ../../..
+    - cd src/services/gateway-service && mvn clean package -DskipTests && cd ../../..
+    - cd src/services/hotel-service && mvn clean package -DskipTests && cd ../../..
+    - cd src/services/session-service && mvn clean package -DskipTests && cd ../../..
+    - cd src/services/payment-service && mvn clean package -DskipTests && cd ../../..
+    - cd src/services/loyalty-service && mvn clean package -DskipTests && cd ../../..
+    - cd src/services/report-service && mvn clean package -DskipTests && cd ../../..
+  artifacts:
+    paths:
+      - "*/target/*.jar"
+    expire_in: 1 hour
+  when: manual
+
+# ============================================
+# STAGE 2: TEST
+# ============================================
+test:
+  stage: test
+  image: maven:3.8-openjdk-11
+  services:
+    - postgres:13
+  variables:
+    POSTGRES_DB: test_db
+    POSTGRES_USER: test_user
+    POSTGRES_PASSWORD: test_pass
+  before_script:
+    - apt-get update
+    - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+    - apt-get install -y nodejs
+    - apt-get update && apt-get install -y curl jq
+    - npm install -g newman
+    # 1. Меняем все localhost на gateway-service
+    - sed -i 's/localhost/gateway-service.production-helm.svc.cluster.local/g' src/application_tests.postman_collection.json
+    # 2. Используем jq для точной замены первого запроса
+    - jq '.item[0].request.url.raw = "session-service.production-helm.svc.cluster.local:{{USERS_PORT}}/api/v1/auth/authorize"' src/application_tests.postman_collection.json > tmp.json && mv tmp.json src/application_tests.postman_collection.json
+    # 3. Меняем host в структуре URL
+    - jq '.item[0].request.url.host = ["session-service.production-helm.svc.cluster.local"]' src/application_tests.postman_collection.json > tmp.json && mv tmp.json src/application_tests.postman_collection.json
+    - sleep 15
+  script:
+    - set -e
+    - cd src/services/booking-service && mvn test -DskipTests && cd ../../..
+    - cd src/services/gateway-service && mvn test -DskipTests && cd ../../..
+    - cd src/services/hotel-service && mvn test -DskipTests && cd ../../..
+    - cd src/services/session-service && mvn test -DskipTests && cd ../../..
+    - cd src/services/payment-service && mvn test -DskipTests && cd ../../..
+    - cd src/services/loyalty-service && mvn test -DskipTests && cd ../../..
+    - cd src/services/report-service && mvn test -DskipTests && cd ../../..
+    - newman run src/application_tests.postman_collection.json --reporters cli
+  when: manual
+
+# ============================================
+# STAGE 3: STAGING
+# ============================================
+staging:
+  stage: staging
+  image: alpine/k8s:1.27.16
+  before_script:
+    - echo "$KUBECONFIG" > /tmp/kubeconfig
+    - export KUBECONFIG=/tmp/kubeconfig
+  script:
+    - echo "Staging deploy would be here"
+  when: manual

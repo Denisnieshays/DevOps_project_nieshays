@@ -1,0 +1,25 @@
+concurrent = 4
+check_interval = 0
+
+[[runners]]
+  name = "k8s-runner"
+  url = "https://git.21-school.ru"
+  token = "GR1348941bmMyNLxxkTnDcoL7wRVK"
+  executor = "kubernetes"
+  request_concurrency = 4
+  lomit = 4
+  
+  [runners.kubernetes]
+    image = "docker:stable"
+    privileged = true
+    
+    [runners.kubernetes.resources]
+      cpu_request = "500m"
+      cpu_limit = "1000m"
+      memory_request = "256Mi"
+      memory_limit = "512Mi"
+    
+    [[runners.kubernetes.volumes.empty_dir]]
+      name = "docker-certs"
+      mount_path = "/certs/client"
+      medium = "Memory"

@@ -1,0 +1,6 @@
+---
+# В случае падения, этот файл перезапускает сервис
+- name: restart apache
+  service:
+    name: apache2
+    state: restarted

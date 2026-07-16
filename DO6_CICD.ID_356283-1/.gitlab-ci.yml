@@ -1,0 +1,62 @@
+stages:
+  - build
+  - test
+  - integration_test
+  - deploy
+
+build_app:
+  stage: build
+  tags:
+    - shell
+  script:
+    - echo "Сборка приложения"
+    - cd code-samples
+    - make clean
+    - make
+    - echo "Сборка завершена"
+    - sleep 3
+  artifacts:
+    paths:
+      - code-samples/DO
+    expire_in: 30 days
+
+check_code_style:
+  stage: test
+  tags:
+    - shell
+  script:
+    - echo "Проверка стиля кода"
+    - cd code-samples
+    - clang-format -n -Werror *.c
+    - echo "Проверка завершена"
+    - sleep 3
+
+integration_tests:
+  stage: integration_test
+  tags:
+    - shell
+  script:
+    - echo "Запуск интеграционных тестов"
+    - chmod +x code-samples/DO
+    - python3 src/integration_tests.py
+    - echo "Тесты завершены"
+    - sleep 3
+  dependencies:
+    - build_app
+
+deploy_production:
+  stage: deploy
+  tags:
+    - shell
+  only:
+    - develop
+  when: manual
+  script:
+  - echo "Проверка артефакта"
+  - ls -la code-samples/DO
+  - chmod +x deploy.sh
+  - echo "Запуск скрипта"
+  - ./deploy.sh
+  - sleep 5
+  dependencies:
+    - build_app

@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # База данных PostgreSQL
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./services/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - backend
+
+  # Очередь сообщений RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - backend
+
+  # Сервис сессий (порт 8081) - БЕЗ ПУБЛИЧНОГО ПОРТА
+  session-service:
+    image: nieshays/session-service:latest
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: users_db
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+  # Сервис отелей (порт 8082) - ОСТАВЛЯЕМ как есть
+  hotel-service:
+    image: nieshays/hotel-service:latest
+    ports:
+      - "8082:8082"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: hotels_db
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+  # Сервис бронирований (порт 8083)
+  booking-service:
+    image: nieshays/booking-service:latest
+    ports:
+      - "8083:8083"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: reservations_db
+      RABBIT_MQ_HOST: rabbitmq
+      RABBIT_MQ_PORT: 5672
+      RABBIT_MQ_USER: guest
+      RABBIT_MQ_PASSWORD: guest
+      RABBIT_MQ_QUEUE_NAME: messagequeue
+      RABBIT_MQ_EXCHANGE: messagequeue-exchange
+      HOTEL_SERVICE_HOST: hotel-service
+      HOTEL_SERVICE_PORT: 8082
+      PAYMENT_SERVICE_HOST: payment-service
+      PAYMENT_SERVICE_PORT: 8084
+      LOYALTY_SERVICE_HOST: loyalty-service
+      LOYALTY_SERVICE_PORT: 8085
+    networks:
+      - backend
+    depends_on:
+      - postgres
+      - rabbitmq
+      - hotel-service
+      - payment-service
+      - loyalty-service
+
+  # Сервис платежей (порт 8084)
+  payment-service:
+    image: nieshays/payment-service:latest
+    ports:
+      - "8084:8084"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payments_db
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+  # Сервис лояльности (порт 8085)
+  loyalty-service:
+    image: nieshays/loyalty-service:latest
+    ports:
+      - "8085:8085"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: balances_db
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+  # Сервис отчетов (порт 8086)
+  report-service:
+    image: nieshays/report-service:latest
+    ports:
+      - "8086:8086"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: statistics_db
+      RABBIT_MQ_HOST: rabbitmq
+      RABBIT_MQ_PORT: 5672
+      RABBIT_MQ_USER: guest
+      RABBIT_MQ_PASSWORD: guest
+      RABBIT_MQ_QUEUE_NAME: messagequeue
+      RABBIT_MQ_EXCHANGE: messagequeue-exchange
+    networks:
+      - backend
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  # Gateway сервис (порт 8087) - БЕЗ ПУБЛИЧНОГО ПОРТА
+  gateway-service:
+    image: nieshays/gateway-service:latest
+    environment:
+      SESSION_SERVICE_HOST: session-service
+      SESSION_SERVICE_PORT: 8081
+      HOTEL_SERVICE_HOST: hotel-service
+      HOTEL_SERVICE_PORT: 8082
+      BOOKING_SERVICE_HOST: booking-service
+      BOOKING_SERVICE_PORT: 8083
+      PAYMENT_SERVICE_HOST: payment-service
+      PAYMENT_SERVICE_PORT: 8084
+      LOYALTY_SERVICE_HOST: loyalty-service
+      LOYALTY_SERVICE_PORT: 8085
+      REPORT_SERVICE_HOST: report-service
+      REPORT_SERVICE_PORT: 8086
+    networks:
+      - backend
+    depends_on:
+      - session-service
+      - hotel-service
+      - booking-service
+      - payment-service
+      - loyalty-service
+      - report-service
+
+  # NGINX прокси
+  nginx-proxy:
+    image: nginx:alpine
+    ports:
+      - "8081:8081"
+      - "8087:8087"
+    networks:
+      - backend
+    volumes:
+      - ./services/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gateway-service
+      - session-service
+
+volumes:
+  postgres_data:
+
+networks:
+  backend:
+    driver: overlay
+    attachable: true

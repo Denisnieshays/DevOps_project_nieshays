@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  {{- range .Values.services }}
+  {{- if .env }}
+  {{- range $key, $value := .env }}
+  {{ $key }}: "{{ $value }}"
+  {{- end }}
+  {{- end }}
+  {{- end }}

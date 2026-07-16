@@ -1,0 +1,78 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Настройка Prometheus к Alertmanager (куда отправляются алерты)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+rule_files:
+  - "/etc/prometheus/alerts.yml"
+
+scrape_configs:
+  # 1. Prometheus
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['192.168.56.10:9090']
+
+  # 2. Node Exporter (метрики серверов)
+  - job_name: 'node-exporter'
+    dns_sd_configs:
+      - names:
+          - 'tasks.node-exporter'
+        type: 'A'
+        port: 9100
+
+  # 3. cAdvisor (метрики контейнеров)
+  - job_name: 'cadvisor'
+    dns_sd_configs:
+      - names:
+          - 'tasks.cadvisor'
+        type: 'A'
+        port: 8080
+    metric_relabel_configs:
+      - source_labels: ['container_label_com_docker_swarm_service_name']
+        target_label: 'service'
+        regex: '(.+)'
+        replacement: '$1'
+        action: replace
+      - source_labels: ['container_label_com_docker_stack_namespace']
+        target_label: 'stack'
+        regex: '(.+)'
+        replacement: '$1'
+        action: replace
+
+  # 4. Blackbox Exporter
+  - job_name: 'blackbox'
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+        - https://google.com
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # 5. Эти сервисы нужны для получения метрик в prometheus согласно 2-му пункту задания
+  - job_name: 'booking-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['192.168.56.10:8083']
+
+  - job_name: 'gateway-service'
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['192.168.56.10:8087']
+
+  - job_name: 'session-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['192.168.56.10:8081']
+  

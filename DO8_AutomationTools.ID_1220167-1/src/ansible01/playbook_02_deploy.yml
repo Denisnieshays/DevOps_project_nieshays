@@ -1,0 +1,15 @@
+---
+# Распределение роли на node01
+- name: Deploy Microservices Application on node01
+  hosts: application
+  become: yes
+  roles:
+    - application
+
+# Распределение роли на node02
+- name: Deploy Apache and PostgreSQL on node02
+  hosts: apache_postgres
+  become: yes
+  roles:
+    - apache
+    - postgres
