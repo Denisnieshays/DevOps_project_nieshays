@@ -4,7 +4,7 @@ check_interval = 0
 [[runners]]
   name = "k8s-runner"
   url = "https://git.21-school.ru"
-  token = "GR1348941bmMyNLxxkTnDcoL7wRVK"
+  token = "G***************************K"
   executor = "kubernetes"
   request_concurrency = 4
   lomit = 4
