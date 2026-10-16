@@ -1,0 +1,22 @@
+apiVersion: apps/v2
+kind: Deployment
+metadata:
+  name: adminer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: adminer
+  template:
+    metadata:
+      labels:
+        app: adminer
+    spec:
+      containers:
+        - name: adminer
+          image: "{{ .Values.adminer.image }}:{{ .Values.adminer.tag }}"
+          ports:
+            - containerPort: {{ .Values.adminer.port }}
+      env:
+        - name: ADMINER_DEFAULT_SERVER
+          value: postgres

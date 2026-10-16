@@ -1,0 +1,14 @@
+apiVersion: v2
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test-frontend"
+  annotation:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": hook-succeeded
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ .Release.Name }}-frontend:{{ .Values.frontend.port }}']
+  restartPolicy: Never

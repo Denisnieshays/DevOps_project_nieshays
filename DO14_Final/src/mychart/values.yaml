@@ -1,0 +1,24 @@
+frontend:
+  image: postgres-fastapi-vite-react-frontend
+  tag: latest
+  port: 5173
+
+backend:
+  image: postgres-fastapi-vite-react-backend
+  tag: latest
+  port: 8000
+
+postgres:
+  image: postgres
+  tag: 16
+  host: postgres
+  db: vector
+  user: username
+  password: password
+  port: 5432
+  databaseUrl: "postgresql://username:password@localhost:5432/vector"
+
+adminer:
+  image: adminer
+  tag: latest
+  port: 8080

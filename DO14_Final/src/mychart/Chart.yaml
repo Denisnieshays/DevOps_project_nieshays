@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mychart
+description: DO14 project - postgres, fastapi, vite-react, adminer
+type: application
+version: 0.1.0
+appVersion: "1.16.0"

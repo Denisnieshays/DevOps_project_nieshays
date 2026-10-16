@@ -1,0 +1,10 @@
+apiVersion: v2
+kind: Service
+metadata:
+  name: adminer
+spec:
+  selector:
+    app: adminer
+  ports:
+    - port: {{ .Values.adminer.port }}
+      targetPort: {{ .Values.adminer.port }}
